@@ -93,7 +93,7 @@ def generate_vocab(files, vocab, cutoff=50000):
     print(f'[!] Save the vocab into {vocab}, vocab_size: {len(w2idx)}')    
 
 
-def generate_data(file, c_size, test_ratio):
+def generate_data(file, c_size = 3, test_ratio = 0.1):
     # Generate training and testing dialog data from given file.
     #   file: contains dialogs per line
     #   c_size: total number of sentences in context + target sentence
@@ -124,6 +124,21 @@ def generate_data(file, c_size, test_ratio):
     sent_list_debug(data, 1569)
     sent_list_debug(data, 15634)
     
+    # Now randomly sample training and testing data to track training process.
+    # Each list of sentences in data is one sample of X, y for training where
+    # X data[idx][0: end-1] and y is data[idx][end]
+    # Binarization will be done later, now only separate sentences and pickle sentences
+    perm = np.random.permutation(len(data))
+    num_test = int(len(data) * test_ratio)
+    test_idx = perm[0:num_test]
+    train_idx = perm[num_test:]
+    test_data  = [data[t] for t in test_idx]
+    train_data = [data[t] for t in train_idx]
+    print('Number of train samples: %d' %len(train_data))
+    print('Number of test samples: %d' %len(test_data))
+    with open('./dailydialog.pkl', 'wb') as f:
+        pkl.dump((train_data, test_data), f)
+    
     
 def main():    
     parser = argparse.ArgumentParser()
@@ -148,8 +163,9 @@ def main():
         w2idx, idx2w = pkl.load(f)
         print(idx2w[0:10])
         
-    # Now start generating train and test data sentence lists
-    generate_data(args.file[0], args.ctx, 0.1)
+    if not os.path.exists('./dailydialog.pkl'):
+        # Now start generating train and test data sentence lists
+        generate_data(args.file[0], args.ctx, 0.1)
         
 
 if __name__ == "__main__":
