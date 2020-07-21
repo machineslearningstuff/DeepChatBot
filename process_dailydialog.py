@@ -40,18 +40,46 @@ def clean(s):
 def generate_vocab(files, vocab, cutoff=50000):
     # Training and validation files, input vocab and output vocab file
     words = []
+    max_sent_len = 0
+    total_sent_len = 0
+    total_num_sent = 0
+    
+    max_dia_len = 0
+    total_num_dia = 0    
+    
     for file in files:
         with open(file, 'r', encoding='utf-8') as f:
             for line in tqdm(f.readlines()):
                 seqs = line.split('__eou__')[:-1]
+
+                # For debugging purposes
+                total_num_dia += 1
+                if len(seqs) > max_dia_len:
+                    max_dia_len = len(seqs)
                 
                 # For each sentence in the line clean and tokenize
                 for seq in seqs:
                     seq = clean(seq)
                     list_words = nltk.word_tokenize(seq)
                     words.extend(list_words)
+                    
+                    # For debugging purposes
+                    total_sent_len += len(list_words)
+                    total_num_sent += 1
+                    if len(list_words) > max_sent_len:
+                        max_sent_len = len(list_words)
+                    
     words = Counter(words)
     print(f'[!] whole vocab size: {len(words)}')
+    
+    # Dialog statistic
+    print('Total number of dialogs: %d' %total_num_dia)
+    print('Total number of sentences: %d' %total_num_sent)
+    print('Num of sent in largest dialog: %d' %max_dia_len)
+    print('Average sent per dialog: %.3f' %(total_num_sent/total_num_dia))
+    print('Total number of words: %d' %total_sent_len)
+    print('Num of words in largest sentence: %d' %max_sent_len)
+    print('Average word per sent: %.3f' %(total_sent_len/total_num_sent))
     
     words = words.most_common(cutoff)
     
